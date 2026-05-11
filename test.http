@@ -1,49 +1,107 @@
 ###
-GET http://127.0.0.1:8080/tasks?filter=active
+GET http://127.0.0.1:3000/tasks
 
 ###
-POST http://127.0.0.1:8080/tasks
+GET http://127.0.0.1:3000/tasks
+User-Id: 2
+
+###
+POST http://127.0.0.1:3000/tasks
+Content-Type: application/json
+User-Id: 1
+
+{"title": "Сделать тест"}
+
+###
+POST http://127.0.0.1:3000/tasks
+Content-Type: application/json
+User-Id: 1
+
+{}
+
+###
+GET http://127.0.0.1:3000/tasks/6
+User-Id: 1
+
+###
+GET http://127.0.0.1:3000/tasks/6
+User-Id: 2
+
+###
+GET http://127.0.0.1:3000/tasks/7
+User-Id: 1
+
+###
+PATCH http://127.0.0.1:3000/tasks/6
+Content-Type: application/json
+User-Id: 1
+
+{}
+
+###
+PATCH http://127.0.0.1:3000/tasks/6
+Content-Type: application/json
+User-Id: 1
+
+{"title": "Убрать тест"}
+
+###
+PATCH http://127.0.0.1:3000/tasks/7
+Content-Type: application/json
+User-Id: 1
+
+{"title": "Убрать тест"}
+
+###
+DELETE http://127.0.0.1:3000/tasks/7
+User-Id: 1
+
+###
+DELETE http://127.0.0.1:3000/tasks/5
+User-Id: 1
+
+###
+GET http://127.0.0.1:3000/tasks
+User-Id: 1
+
+###
+GET http://127.0.0.1:3000/users
+
+###
+POST http://127.0.0.1:3000/users
 Content-Type: application/json
 
-{"title": "asd"}
+{"name": "Тестович"}
 
 ###
-POST http://127.0.0.1:8080/tasks
+POST http://127.0.0.1:3000/users
 Content-Type: application/json
 
 {}
 
 ###
-GET http://127.0.0.1:8080/tasks/6
+GET http://127.0.0.1:3000/users/2
 
 ###
-GET http://127.0.0.1:8080/tasks/7
+GET http://127.0.0.1:3000/users/3
 
 ###
-PATCH http://127.0.0.1:8080/tasks/6
+PATCH http://127.0.0.1:3000/users/2
 Content-Type: application/json
 
 {}
 
 ###
-PATCH http://127.0.0.1:8080/tasks/6
+PATCH http://127.0.0.1:3000/users/2
 Content-Type: application/json
 
-{"title": "asd"}
+{"name": "Тестовна"}
 
 ###
-PATCH http://127.0.0.1:8080/tasks/7
-Content-Type: application/json
-
-{"title": "asd"}
+DELETE http://127.0.0.1:3000/users/3
 
 ###
-DELETE http://127.0.0.1:8080/tasks/7
+DELETE http://127.0.0.1:3000/users/2
 
 ###
-DELETE http://127.0.0.1:8080/tasks/5
-
-###
-GET http://127.0.0.1:8080/tasks
-
-###
+GET http://127.0.0.1:3000/users

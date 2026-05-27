@@ -11,13 +11,13 @@ export const idSchema = z.object({
  */
 export const taskSchema = z.object({
   id: z.number(),
-  userId: z.number(),
   title: z.string(),
+  userId: z.number().nullable(),
   status: z.object({
     id: z.number(),
     title: z.string(),
     resolved: z.boolean()
-  }),
+  }).nullable(),
   createdAt: z.string(),
   updatedAt: z.string().nullable()
 })

@@ -28,7 +28,12 @@ const users: FastifyPluginAsync = async(instance) => {
      * эффективно сериализовался в JSON и схема эффективно переиспользовалась.
      */
     .get('/', {schema: {response: {200: {type: 'array', items: {$ref: 'User#'}}}}}, async() => {
-      return await instance.usersRepository.list() as any[]
+      return await instance.usersRepository.list()
+        .then((users) => users.map((user) => ({
+          ...user,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt?.toISOString() ?? null
+        })))
     })
     /**
      * Регистрируем путь на создание пользователя.
@@ -47,7 +52,8 @@ const users: FastifyPluginAsync = async(instance) => {
     }, async(req) => {
       return await instance.usersRepository.add({
         ...req.body,
-        createdAt: new Date().toISOString()
+        createdAt: new Date(),
+        updatedAt: null
       });
     })
 };

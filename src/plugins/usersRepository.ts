@@ -3,7 +3,8 @@ import fp from 'fastify-plugin'
 interface User {
   id: number
   name: string
-  createdAt: string
+  createdAt: Date
+  updatedAt: Date | null
 }
 
 /**
@@ -15,20 +16,11 @@ declare module 'fastify' {
       list(): Promise<Array<User>>
       get(id: User['id']): Promise<User | null>
       add(user: Omit<User, 'id'>): Promise<User['id']>
-      set(id: User['id'], user: Partial<Omit<User, 'id'>>): Promise<void>
+      set(id: User['id'], user: Partial<Omit<User, 'id' | 'createdAt'>> & {updatedAt: NonNullable<User['updatedAt']>}): Promise<void>
       delete(id: User['id']): Promise<void>
     }
   }
 }
-
-const rows = [
-  {
-    id: 1,
-    name: 'Саша',
-    createdAt: new Date('2026-04-24T14:29:00Z').toISOString()
-  }
-];
-let lastId = 1;
 
 /**
  * Устанавливает данные пользователей.
@@ -36,29 +28,36 @@ let lastId = 1;
 export default fp((instance) => {
   instance.decorate('usersRepository', {
     async list() {
-      return rows.slice()
+      return await instance.pg.queryBuilder()
+        .from('users')
+        .whereNull('deleted_at')
+        .select('id', 'name', 'created_at as createdAt');
     },
     async get(id) {
-      return rows.find((user) => user.id === id) ?? null
+      return await instance.pg.queryBuilder()
+        .from('users')
+        .where('id', id)
+        .whereNull('deleted_at')
+        .first('id', 'name', 'created_at as createdAt');
     },
     async add(user) {
-      rows.push({...user, id: ++lastId})
-
-      return lastId
+      return await instance.pg.queryBuilder()
+        .into('users')
+        .insert({name: user.name, created_at: user.createdAt})
+        .returning('id')
+        .then(([{id}]) => id)
     },
     async set(id, user) {
-      const found = rows.find((user) => user.id === id)
-
-      if (found) {
-        Object.assign(found, user)
-      }
+      await instance.pg.queryBuilder()
+        .from('users')
+        .where('id', id)
+        .update(user)
     },
     async delete(id) {
-      const foundIdx = rows.findIndex((user) => user.id === id)
-
-      if (foundIdx !== -1) {
-        rows.splice(foundIdx, 1)
-      }
+      await instance.pg.queryBuilder()
+        .from('users')
+        .where('id', id)
+        .update({deleted_at: new Date()})
     }
   })
-}, {name: 'usersRepository'})
+}, {name: 'usersRepository', dependencies: ['pg'], decorators: {fastify: ['pg']}})

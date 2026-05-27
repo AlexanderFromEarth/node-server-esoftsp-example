@@ -48,6 +48,11 @@ const tasks: FastifyPluginAsync = async(instance) => {
       }
 
       return await instance.tasksRepository.list(filter)
+        .then((tasks) => tasks.map((task) => ({
+          ...task,
+          createdAt: task.createdAt.toISOString(),
+          updatedAt: task.updatedAt?.toISOString() ?? null
+        })))
     })
     /**
      * Регистрируем путь на создание задачи.
@@ -63,10 +68,10 @@ const tasks: FastifyPluginAsync = async(instance) => {
       }
     }, async(req) => {
       return await instance.tasksRepository.add({
+        ...req.body,
         userId: req.user.id,
         statusId: 1,
-        ...req.body,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(),
         updatedAt: null
       })
     })

@@ -1,16 +1,25 @@
 import fp from 'fastify-plugin'
 
-interface Task {
+interface TaskView {
   id: number
-  userId: number
   title: string
+  userId: number | null
   status: {
     id: number
     title: string
     resolved: boolean
-  }
-  updatedAt: string | null
-  createdAt: string
+  } | null
+  createdAt: Date
+  updatedAt: Date | null
+}
+
+interface Task {
+  id: number
+  title: string
+  userId: number | null
+  statusId: number | null
+  createdAt: Date
+  updatedAt: Date | null
 }
 
 /**
@@ -19,96 +28,14 @@ interface Task {
 declare module 'fastify' {
   interface FastifyInstance {
     tasksRepository: {
-      list(filter?: Partial<{userId: number, resolved: boolean}>): Promise<Array<Task>>
-      get(id: Task['id']): Promise<Task | null>
-      add(task: Omit<Task, 'id' | 'status'> & {statusId: Task['status']['id']}): Promise<Task['id']>
-      set(id: Task['id'], task: Partial<Omit<Task, 'id' | 'status'> & {statusId: Task['status']['id']}>): Promise<void>
+      list(filter?: Partial<{userId: number, resolved: boolean}>): Promise<Array<TaskView>>
+      get(id: Task['id']): Promise<TaskView | null>
+      add(task: Omit<Task, 'id'>): Promise<Task['id']>
+      set(id: Task['id'], task: Partial<Omit<Task, 'id' | 'createdAt'>> & {updatedAt: NonNullable<Task['updatedAt']>}): Promise<void>
       delete(id: Task['id']): Promise<void>
     }
   }
 }
-
-const statuses: Record<number, Task['status']> = {
-  1: {
-    id: 1,
-    title: 'Новая',
-    resolved: false
-  },
-  2: {
-    id: 2,
-    title: 'В работе',
-    resolved: false
-  },
-  3: {
-    id: 3,
-    title: 'Выполнено',
-    resolved: true
-  }
-};
-
-const rows: Array<Task> = [
-  {
-    id: 1,
-    title: 'Подготовить презентацию',
-    userId: 1,
-    status: {
-      id: 3,
-      title: 'Выполнено',
-      resolved: true
-    },
-    updatedAt: new Date('2026-04-24T14:29:59Z').toISOString(),
-    createdAt: new Date('2026-04-24T14:29:00Z').toISOString()
-  },
-  {
-    id: 2,
-    userId: 1,
-    title: 'Созвониться с заказчиком',
-    status: {
-      id: 1,
-      title: 'Новая',
-      resolved: false
-    },
-    updatedAt: new Date('2026-04-24T14:29:59Z').toISOString(),
-    createdAt: new Date('2026-04-24T15:05:00Z').toISOString()
-  },
-  {
-    id: 3,
-    userId: 1,
-    title: 'Проверить pull request',
-    status: {
-      id: 2,
-      title: 'В работе',
-      resolved: false
-    },
-    updatedAt: new Date('2026-04-24T14:29:59Z').toISOString(),
-    createdAt: new Date('2026-04-24T15:20:00Z').toISOString()
-  },
-  {
-    id: 4,
-    userId: 1,
-    title: 'Обновить документацию',
-    status: {
-      id: 3,
-      title: 'Выполнено',
-      resolved: true
-    },
-    updatedAt: new Date('2026-04-24T16:30:00Z').toISOString(),
-    createdAt: new Date('2026-04-24T16:00:00Z').toISOString()
-  },
-  {
-    id: 5,
-    userId: 1,
-    title: 'Составить список задач на спринт',
-    status: {
-      id: 2,
-      title: 'В работе',
-      resolved: false
-    },
-    updatedAt: new Date('2026-04-24T17:00:00Z').toISOString(),
-    createdAt: new Date('2026-04-24T16:40:00Z').toISOString()
-  }
-];
-let lastId = 5;
 
 /**
  * Устанавливает данные задач.
@@ -116,31 +43,97 @@ let lastId = 5;
 export default fp((instance) => {
   instance.decorate('tasksRepository', {
     async list(filter) {
-      return rows.filter((row) =>
-        (!filter || !('resolved' in filter) || row.status.resolved === filter.resolved) ||
-        (!filter || !('userId' in filter) || row.userId === filter.userId))
+      const query = instance.pg.queryBuilder()
+        .from('tasks as t')
+        .join('statuses as s', (join) => join
+          .on('t.status_id', 's.id'))
+        .whereNull('deleted_at')
+        .select(
+          't.id as id',
+          't.assignee_id as userId',
+          't.title as title',
+          instance.pg.raw('row_to_json(s) as status'),
+          't.created_at as createdAt',
+          't.updated_at as updatedAt'
+        )
+        .orderBy('createdAt', 'desc');
+
+      if (filter && 'resolved' in filter) {
+        query.where('s.resolved', filter.resolved)
+      }
+      if (filter && 'userId' in filter) {
+        query.where('t.assignee_id', filter.userId)
+      }
+
+      return await query;
     },
     async get(id) {
-      return rows.find((task) => task.id === id) ?? null
+      return await instance.pg.queryBuilder()
+        .from('tasks as t')
+        .join('statuses as s', (join) => join
+          .on('t.status_id', 's.id'))
+        .where('t.id', id)
+        .whereNull('deleted_at')
+        .first(
+          't.id as id',
+          't.assignee_id as userId',
+          't.title as title',
+          instance.pg.raw('row_to_json(s) as status'),
+          't.created_at as createdAt',
+          't.updated_at as updatedAt'
+        );
     },
-    async add({statusId, ...task}) {
-      rows.push({...task, status: statuses[statusId], id: ++lastId})
+    async add(task) {
+      return await instance.pg.transaction(async(trx) => {
+        const [{id}] = await instance.pg.queryBuilder()
+          .transacting(trx)
+          .into('tasks')
+          .insert({
+            assignee_id: task.userId,
+            title: task.title,
+            status_id: task.statusId,
+            created_at: task.createdAt,
+            updated_at: task.updatedAt,
+          })
+          .returning('id')
 
-      return lastId
+        await instance.pg.queryBuilder()
+          .transacting(trx)
+          .into('task_statuses')
+          .insert({task_id: id, status_id: task.statusId, created_at: task.createdAt})
+
+        return id
+      })
     },
-    async set(id, {statusId, ...task}) {
-      const found = rows.find((task) => task.id === id)
+    async set(id, task) {
+      await instance.pg.transaction(async(trx) => {
+        await instance.pg.queryBuilder()
+          .transacting(trx)
+          .from('tasks')
+          .where('id', id)
+          .update({
+            title: task.title,
+            assignee_id: task.userId,
+            status_id: task.statusId,
+            updated_at: task.updatedAt
+          })
 
-      if (found) {
-        Object.assign(found, {...task, status: statusId ? statuses[statusId] : found.status})
-      }
+        if (task.statusId) {
+          await instance.pg.queryBuilder()
+            .transacting(trx)
+            .into('task_statuses')
+            .insert({task_id: id, status_id: task.statusId, created_at: task.updatedAt})
+        }
+      })
     },
     async delete(id) {
-      const foundIdx = rows.findIndex((task) => task.id === id)
-
-      if (foundIdx !== -1) {
-        rows.splice(foundIdx, 1)
-      }
+      await instance.pg.transaction(async(trx) => {
+        await instance.pg.queryBuilder()
+          .transacting(trx)
+          .from('tasks')
+          .where('id', id)
+          .update({deleted_at: new Date().toISOString()})
+      })
     }
   })
-}, {name: 'tasksRepository'})
+}, {name: 'tasksRepository', dependencies: ['pg'], decorators: {fastify: ['pg']}})

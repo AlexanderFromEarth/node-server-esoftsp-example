@@ -10,6 +10,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     config: {
       COOKIE_SECRET: string
+      DATABASE_URL: string
     }
   }
 }
@@ -35,8 +36,11 @@ const app: FastifyPluginAsync<AppOptions> = async(fastify, opts): Promise<void> 
        */
       schema: {
         type: 'object',
-        required: ['COOKIE_SECRET'],
-        properties: {COOKIE_SECRET: {type: 'string', default: 'test'}}
+        required: ['COOKIE_SECRET', 'DATABASE_URL'],
+        properties: {
+          COOKIE_SECRET: {type: 'string', default: 'test'},
+          DATABASE_URL: {type: 'string', default: 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public'}
+        }
       }
     })
     /**

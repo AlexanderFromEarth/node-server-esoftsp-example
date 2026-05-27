@@ -69,7 +69,11 @@ const task: FastifyPluginAsync = async(instance) => {
      * чтобы ответ эффективно сериализовался в JSON.
      */
     .get('/', {schema: {params: idSchema, response: {200: taskSchema}}}, async(req) => {
-      return req.taskRow!;
+      return {
+        ...req.taskRow!,
+        createdAt: req.taskRow!.createdAt.toISOString(),
+        updatedAt: req.taskRow!.updatedAt?.toISOString() ?? null
+      };
     })
     /**
      * Регистрируем путь на изменение задачи.
@@ -83,7 +87,10 @@ const task: FastifyPluginAsync = async(instance) => {
         )}).partial()
       }
     }, async(req) => {
-      await instance.tasksRepository.set(req.params.id, req.body)
+      await instance.tasksRepository.set(req.params.id, {
+        ...req.body,
+        updatedAt: new Date()
+      })
     })
     /**
      * Регистрируем путь на удаление задачи.

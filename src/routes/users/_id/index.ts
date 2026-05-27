@@ -67,7 +67,11 @@ const user: FastifyPluginAsync = async(instance) => {
      * эффективно сериализовался в JSON.
      */
     .get('/', {schema: {params: {$ref: 'Id#'}, response: {200: {$ref: 'User#'}}}}, async(req) => {
-      return req.userRow!
+      return {
+        ...req.userRow!,
+        createdAt: req.userRow!.createdAt.toISOString(),
+        updatedAt: req.userRow!.updatedAt?.toISOString() ?? null
+      }
     })
     /**
      * Регистрируем путь на изменение пользователя.
@@ -81,7 +85,10 @@ const user: FastifyPluginAsync = async(instance) => {
         body: {type: 'object', properties: {name: {type: 'string', minLength: 1}}}
       }
     }, async(req) => {
-      await instance.usersRepository.set(req.params.id, req.body)
+      await instance.usersRepository.set(req.params.id, {
+        ...req.body,
+        updatedAt: new Date()
+      })
     })
     /**
      * Регистрируем путь на удаление пользователя.

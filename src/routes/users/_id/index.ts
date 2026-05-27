@@ -11,8 +11,7 @@ import {idSchema, userSchema} from '../../../schemas/users';
  */
 declare module 'fastify' {
   interface FastifyRequest {
-    userRow: FastifyInstance['users'][number] | null
-    userIdx: number
+    userRow: Awaited<ReturnType<FastifyInstance['usersRepository']['get']>>
   }
 }
 
@@ -47,16 +46,11 @@ const user: FastifyPluginAsync = async(instance) => {
      */
     .decorateRequest('userRow', null)
     /**
-     * Регистрируем новое поле userUdx в запросе со значением -1 по-умолчанию.
-     */
-    .decorateRequest('userIdx', -1)
-    /**
      * После валидации, но до обработки заполняем данные новых полей через хук preHandler
      * и кидаем ошибку, если таких данных нет.
      */
     .addHook('preHandler', async(req) => {
-      req.userIdx = instance.users.findIndex((user) => user.id === (req.params as {id?: number}).id)
-      req.userRow = instance.users[req.userIdx] ?? null
+      req.userRow = await instance.usersRepository.get((req.params as {id: number}).id)
 
       if (!req.userRow) {
         /**
@@ -87,7 +81,7 @@ const user: FastifyPluginAsync = async(instance) => {
         body: {type: 'object', properties: {name: {type: 'string', minLength: 1}}}
       }
     }, async(req) => {
-      Object.assign(req.userRow!, req.body)
+      await instance.usersRepository.set(req.params.id, req.body)
     })
     /**
      * Регистрируем путь на удаление пользователя.
@@ -95,7 +89,7 @@ const user: FastifyPluginAsync = async(instance) => {
      * эффективно использовались существующие схемы.
      */
     .delete('/', {schema: {params: {$ref: 'Id#'}}}, async(req) => {
-      instance.users.splice(req.userIdx, 1)
+      await instance.usersRepository.delete(req.params.id)
     })
 };
 

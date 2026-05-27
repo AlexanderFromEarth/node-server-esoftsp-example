@@ -16,8 +16,7 @@ import {idSchema, taskSchema} from '../../../schemas/tasks'
  */
 declare module 'fastify' {
   interface FastifyRequest {
-    taskRow: FastifyInstance['tasks'][number] | null
-    taskIdx: number
+    taskRow: Awaited<ReturnType<FastifyInstance['tasksRepository']['get']>>
   }
 }
 
@@ -43,16 +42,11 @@ const task: FastifyPluginAsync = async(instance) => {
      */
     .decorateRequest('taskRow', null)
     /**
-     * Регистрируем новое поле taskIdx в запросе со значением -1 по-умолчанию.
-     */
-    .decorateRequest('taskIdx', -1)
-    /**
      * После валидации, но до обработки заполняем данные новых полей через хук preHandler
      * и кидаем ошибку, если таких данных нет.
      */
     .addHook('preHandler', async(req) => {
-      req.taskIdx = instance.tasks.findIndex((task) => task.id === (req.params as {id?: number}).id)
-      req.taskRow = instance.tasks[req.taskIdx] ?? null
+      req.taskRow = await instance.tasksRepository.get((req.params as {id: number}).id)
 
       if (!req.taskRow) {
         /**
@@ -89,14 +83,14 @@ const task: FastifyPluginAsync = async(instance) => {
         )}).partial()
       }
     }, async(req) => {
-      Object.assign(req.taskRow!, req.body)
+      await instance.tasksRepository.set(req.params.id, req.body)
     })
     /**
      * Регистрируем путь на удаление задачи.
      * В schema указываем для params zod-схему id, чтобы запрос валидировался.
      */
     .delete('/', {schema: {params: idSchema}}, async(req) => {
-      instance.tasks.splice(req.taskIdx, 1);
+      await instance.tasksRepository.delete(req.params.id)
     })
 };
 

@@ -39,16 +39,15 @@ const tasks: FastifyPluginAsync = async(instance) => {
         response: {200: z.array(taskSchema)}
       }
     }, async(req) => {
+      const filter = {userId: req.user.id} as NonNullable<Parameters<typeof instance.tasksRepository.list>[0]>
+
       if (req.query.filter === 'active') {
-        return instance.tasks.filter((task) =>
-          !task.state.resolved && task.userId === req.user.id)
+        filter.resolved = false
       } else if (req.query.filter === 'done') {
-        return instance.tasks.filter((task) =>
-          task.state.resolved && task.userId === req.user.id)
-      } else {
-        return instance.tasks.filter((task) =>
-          task.userId === req.user.id)
+        filter.resolved = true
       }
+
+      return await instance.tasksRepository.list(filter)
     })
     /**
      * Регистрируем путь на создание задачи.
@@ -63,22 +62,13 @@ const tasks: FastifyPluginAsync = async(instance) => {
         response: {200: z.number()}
       }
     }, async(req) => {
-      const task = {
-        id: ++instance.taskLastId,
+      return await instance.tasksRepository.add({
         userId: req.user.id,
-        state: {
-          id: 1,
-          title: 'Новая',
-          resolved: false,
-          updatedAt: null
-        },
+        statusId: 1,
         ...req.body,
-        createdAt: new Date().toISOString()
-      }
-
-      instance.tasks.push(task)
-
-      return task.id
+        createdAt: new Date().toISOString(),
+        updatedAt: null
+      })
     })
 };
 

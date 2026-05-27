@@ -13,11 +13,11 @@ export const taskSchema = z.object({
   id: z.number(),
   userId: z.number(),
   title: z.string(),
-  state: z.object({
+  status: z.object({
     id: z.number(),
     title: z.string(),
-    resolved: z.boolean(),
-    updatedAt: z.string().nullable()
+    resolved: z.boolean()
   }),
-  createdAt: z.string()
+  createdAt: z.string(),
+  updatedAt: z.string().nullable()
 })

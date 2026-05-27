@@ -53,8 +53,7 @@ export default fp((instance) => {
       if (req.headers['user-id']) {
         const userId = Number(req.headers['user-id'])
 
-        req.setDecorator<typeof req.user | null>('_user', instance.users
-          .find((user) => user.id === userId) ?? null)
+        req.setDecorator<typeof req.user | null>('_user', await instance.usersRepository.get(userId))
       }
     })
-}, {name: 'user', dependencies: ['users'], decorators: {fastify: ['users']}})
+}, {name: 'user', dependencies: ['usersRepository'], decorators: {fastify: ['usersRepository']}})

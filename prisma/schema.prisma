@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  createdAt DateTime  @map("created_at")
+  updatedAt DateTime? @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  tasks     Task[]    @relation(name: "Assignee")
+
+  @@map("users")
+}
+
+model Task {
+  id            Int                @id @default(autoincrement())
+  title         String
+  assigneeId    Int?               @map("assignee_id")
+  assignee      User?              @relation(name: "Assignee", fields: [assigneeId], references: [id])
+  statusId      Int?               @map("status_id")
+  status        Status?            @relation(name: "Status", fields: [statusId], references: [id])
+  createdAt     DateTime           @map("created_at")
+  updatedAt     DateTime?          @map("updated_at")
+  deletedAt     DateTime?          @map("deleted_at")
+  statusHistory TaskStatusChange[] @relation(name: "TaskStatusChange_Task")
+
+  @@map("tasks")
+}
+
+model Status {
+  id                Int                @id @default(autoincrement())
+  title             String
+  resolved          Boolean            @default(false)
+  tasks             Task[]             @relation(name: "Status")
+  taskStatusChanges TaskStatusChange[] @relation(name: "TaskStatusChange_Status")
+
+  @@map("statuses")
+}
+
+model TaskStatusChange {
+  taskId    Int      @map("task_id")
+  task      Task     @relation(name: "TaskStatusChange_Task", fields: [taskId], references: [id])
+  statusId  Int      @map("status_id")
+  status    Status   @relation(name: "TaskStatusChange_Status", fields: [statusId], references: [id])
+  createdAt DateTime @map("created_at")
+
+  @@id([taskId, createdAt])
+  @@map("task_statuses")
+}

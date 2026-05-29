@@ -4,7 +4,7 @@ import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to
 /**
  * Импортируем наши заготовленные JSON-схемы.
  */
-import {idSchema, userSchema} from '../../../schemas/users';
+import {idSchema, userSchema} from '../../../schemas/users.js';
 
 /**
  * Расширяем тип запроса под наши данные.

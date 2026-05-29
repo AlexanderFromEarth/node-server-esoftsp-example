@@ -46,12 +46,12 @@ const app: FastifyPluginAsync<AppOptions> = async(fastify, opts): Promise<void> 
     /**
      * Загружает плагины, которые предоставляют дополнительную функциональность приложению.
      */
-    .register(autoload, {dir: join(__dirname, 'plugins'), options: opts})
+    .register(autoload, {dir: join(import.meta.dirname, 'plugins'), options: opts})
     /**
      * Загружает плагины, которые объявляют пути.
      * routeParams позволяет сделать имена директориями параметризованными с помощью _.
      */
-    .register(autoload, {dir: join(__dirname, 'routes'), options: opts, routeParams: true})
+    .register(autoload, {dir: join(import.meta.dirname, 'routes'), options: opts, routeParams: true})
 }
 
 export default app

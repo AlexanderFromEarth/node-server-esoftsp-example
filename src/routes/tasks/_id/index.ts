@@ -9,7 +9,7 @@ import {
 /**
  * Импортируем наши заготовленные zod-схемы.
  */
-import {idSchema, taskSchema} from '../../../schemas/tasks'
+import {idSchema, taskSchema} from '../../../schemas/tasks.js'
 
 /**
  * Расширяем тип запроса под наши данные.
@@ -55,7 +55,7 @@ const task: FastifyPluginAsync = async(instance) => {
          */
         throw instance.httpErrors.notFound()
       }
-      if (req.taskRow.userId !== req.user.id) {
+      if (req.taskRow.assignee?.id !== req.user.id) {
         /**
          * instance.httpErrors.forbidden поставляется через @fastify/sensible
          * это удобный способ кидать ошибки вместо использования reply.

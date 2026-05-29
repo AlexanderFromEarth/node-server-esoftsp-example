@@ -12,12 +12,22 @@ export const idSchema = z.object({
 export const taskSchema = z.object({
   id: z.number(),
   title: z.string(),
-  userId: z.number().nullable(),
+  assignee: z.object({
+    id: z.number(),
+    name: z.string(),
+    createdAt: z.date()
+  }).nullable(),
   status: z.object({
     id: z.number(),
     title: z.string(),
     resolved: z.boolean()
   }).nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string().nullable()
+  statusHistory: z.array(z.object({
+    id: z.number(),
+    title: z.string(),
+    resolved: z.boolean(),
+    createdAt: z.date()
+  })),
+  createdAt: z.date(),
+  updatedAt: z.date().nullable()
 })

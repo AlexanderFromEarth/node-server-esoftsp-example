@@ -9,7 +9,7 @@ import {
 /**
  * Импортируем наши заготовленную zod-схему.
  */
-import {taskSchema} from '../../schemas/tasks'
+import {taskSchema} from '../../schemas/tasks.js'
 
 /**
  * Определяет обработку данных по коллекции tasks.
@@ -48,11 +48,6 @@ const tasks: FastifyPluginAsync = async(instance) => {
       }
 
       return await instance.tasksRepository.list(filter)
-        .then((tasks) => tasks.map((task) => ({
-          ...task,
-          createdAt: task.createdAt.toISOString(),
-          updatedAt: task.updatedAt?.toISOString() ?? null
-        })))
     })
     /**
      * Регистрируем путь на создание задачи.
@@ -69,7 +64,7 @@ const tasks: FastifyPluginAsync = async(instance) => {
     }, async(req) => {
       return await instance.tasksRepository.add({
         ...req.body,
-        userId: req.user.id,
+        assigneeId: req.user.id,
         statusId: 1,
         createdAt: new Date(),
         updatedAt: null

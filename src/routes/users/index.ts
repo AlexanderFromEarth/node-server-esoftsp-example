@@ -1,7 +1,7 @@
 import {type FastifyPluginAsync} from 'fastify';
 import {type JsonSchemaToTsProvider} from '@fastify/type-provider-json-schema-to-ts';
 
-import {userSchema} from '../../schemas/users';
+import {userSchema} from '../../schemas/users.js';
 
 const users: FastifyPluginAsync = async(instance) => {
   instance

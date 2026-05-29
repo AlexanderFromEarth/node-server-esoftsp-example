@@ -28,36 +28,20 @@ declare module 'fastify' {
 export default fp((instance) => {
   instance.decorate('usersRepository', {
     async list() {
-      return await instance.pg.queryBuilder()
-        .from('users')
-        .whereNull('deleted_at')
-        .select('id', 'name', 'created_at as createdAt');
+      return await instance.prisma.user.findMany({where: {deletedAt: null}})
     },
     async get(id) {
-      return await instance.pg.queryBuilder()
-        .from('users')
-        .where('id', id)
-        .whereNull('deleted_at')
-        .first('id', 'name', 'created_at as createdAt');
+      return await instance.prisma.user.findUnique({where: {id, deletedAt: null}})
     },
     async add(user) {
-      return await instance.pg.queryBuilder()
-        .into('users')
-        .insert({name: user.name, created_at: user.createdAt})
-        .returning('id')
-        .then(([{id}]) => id)
+      return await instance.prisma.user.create({data: user})
+        .then((result) => result.id)
     },
     async set(id, user) {
-      await instance.pg.queryBuilder()
-        .from('users')
-        .where('id', id)
-        .update(user)
+      await instance.prisma.user.update({where: {id, deletedAt: null}, data: user})
     },
     async delete(id) {
-      await instance.pg.queryBuilder()
-        .from('users')
-        .where('id', id)
-        .update({deleted_at: new Date()})
+      await instance.prisma.user.update({where: {id}, data: {deletedAt: new Date()}})
     }
   })
-}, {name: 'usersRepository', dependencies: ['pg'], decorators: {fastify: ['pg']}})
+}, {name: 'usersRepository', dependencies: ['prisma'], decorators: {fastify: ['prisma']}})

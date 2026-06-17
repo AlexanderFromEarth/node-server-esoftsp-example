@@ -69,8 +69,8 @@ const user: FastifyPluginAsync = async(instance) => {
     .get('/', {schema: {params: {$ref: 'Id#'}, response: {200: {$ref: 'User#'}}}}, async(req) => {
       return {
         ...req.userRow!,
-        createdAt: req.userRow!.createdAt.toISOString(),
-        updatedAt: req.userRow!.updatedAt?.toISOString() ?? null
+        createdAt: req.userRow!.createdAt,
+        updatedAt: req.userRow!.updatedAt ?? null
       }
     })
     /**

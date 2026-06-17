@@ -71,9 +71,9 @@ const task: FastifyPluginAsync = async(instance) => {
     .get('/', {schema: {params: idSchema, response: {200: taskSchema}}}, async(req) => {
       return {
         ...req.taskRow!,
-        createdAt: req.taskRow!.createdAt.toISOString(),
-        updatedAt: req.taskRow!.updatedAt?.toISOString() ?? null
-      };
+        createdAt: req.taskRow!.createdAt,
+        updatedAt: req.taskRow!.updatedAt ?? null
+      } as any;
     })
     /**
      * Регистрируем путь на изменение задачи.

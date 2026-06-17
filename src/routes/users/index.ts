@@ -31,9 +31,9 @@ const users: FastifyPluginAsync = async(instance) => {
       return await instance.usersRepository.list()
         .then((users) => users.map((user) => ({
           ...user,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt?.toISOString() ?? null
-        })))
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt ?? null
+        }) as any))
     })
     /**
      * Регистрируем путь на создание пользователя.

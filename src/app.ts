@@ -3,6 +3,8 @@ import {FastifyPluginAsync, FastifyServerOptions} from 'fastify'
 import autoload, {AutoloadPluginOptions} from '@fastify/autoload'
 import env from '@fastify/env'
 
+import bullmq from './bullmq.js'
+
 /**
  * Расширяем тип сервера под конфиг для @fastify/env.
  */
@@ -52,6 +54,10 @@ const app: FastifyPluginAsync<AppOptions> = async(fastify, opts): Promise<void> 
      * routeParams позволяет сделать имена директориями параметризованными с помощью _.
      */
     .register(autoload, {dir: join(import.meta.dirname, 'routes'), options: opts, routeParams: true})
+    /**
+     * Загружает воркеры, имя файлов которых становится.
+     */
+    .register(bullmq, {dir: join(import.meta.dirname, 'workers'), ui: '/workers'})
 }
 
 export default app

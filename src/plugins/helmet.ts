@@ -23,10 +23,11 @@ export default fp<FastifyHelmetOptions>(async(instance) => {
      *   1. default-src 'none' - из соображений эволюции API.
      *   2. frame-ancestors 'none' - для блокировки встраивания через iframe.
      */
-    contentSecurityPolicy: {
-      useDefaults: false,
-      directives: {'default-src': '"none"', 'frame-ancestors': '"none"'}
-    },
+    // contentSecurityPolicy: {
+    //   useDefaults: false,
+    //   directives: {'default-src': '"none"', 'frame-ancestors': '"none"'}
+    // },
+    contentSecurityPolicy: false,
     /**
      * Устанавливает X-Frame-Options заголовок,
      * который является старым аналогом для Content-Security-Policy: frame-ancestors, предназначенным

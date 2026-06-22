@@ -1,18 +1,16 @@
-import {join} from 'node:path'
+import {glob} from 'node:fs/promises'
+import {basename, dirname, join} from 'node:path'
+
 import {FastifyPluginAsync, FastifyServerOptions} from 'fastify'
 import autoload, {AutoloadPluginOptions} from '@fastify/autoload'
 import env from '@fastify/env'
 
-import bullmq from './bullmq.js'
-
-/**
- * Расширяем тип сервера под конфиг для @fastify/env.
- */
 declare module 'fastify' {
   interface FastifyInstance {
     config: {
       COOKIE_SECRET: string
       DATABASE_URL: string
+      REDIS_URL: string
     }
   }
 }
@@ -20,11 +18,7 @@ declare module 'fastify' {
 export interface AppOptions extends FastifyServerOptions, Partial<AutoloadPluginOptions> {
 }
 
-/**
- * Здесь можно указать доп. опции сервера, но при запуске нужно будет передать --options.
- */
-const options: AppOptions = {
-}
+const options: AppOptions = {}
 
 const app: FastifyPluginAsync<AppOptions> = async(fastify, opts): Promise<void> => {
   fastify
@@ -38,26 +32,28 @@ const app: FastifyPluginAsync<AppOptions> = async(fastify, opts): Promise<void> 
        */
       schema: {
         type: 'object',
-        required: ['COOKIE_SECRET', 'DATABASE_URL'],
+        required: ['COOKIE_SECRET', 'DATABASE_URL', 'REDIS_URL'],
         properties: {
           COOKIE_SECRET: {type: 'string', default: 'test'},
-          DATABASE_URL: {type: 'string', default: 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public'}
+          DATABASE_URL: {type: 'string', default: 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public'},
+          REDIS_URL: {type: 'string', default: 'redis://localhost:6379'}
         }
       }
     })
     /**
      * Загружает плагины, которые предоставляют дополнительную функциональность приложению.
      */
-    .register(autoload, {dir: join(import.meta.dirname, 'plugins'), options: opts})
+    .register(autoload, {dir: join(import.meta.dirname, 'plugins'), options: opts, encapsulate: false})
     /**
-     * Загружает плагины, которые объявляют пути.
-     * routeParams позволяет сделать имена директориями параметризованными с помощью _.
+     * Загружает модули.
      */
-    .register(autoload, {dir: join(import.meta.dirname, 'routes'), options: opts, routeParams: true})
-    /**
-     * Загружает воркеры, имя файлов которых становится.
-     */
-    .register(bullmq, {dir: join(import.meta.dirname, 'workers'), ui: '/workers'})
+    .register(async function(instance, {dir}) {
+      for await (const filename of glob(`${dir}/*/app.js`)) {
+        const {default: app} = await import(filename)
+
+        instance.register(app, {prefix: `/${basename(dirname(filename))}`})
+      }
+    }, {dir: join(import.meta.dirname, 'apps')})
 }
 
 export default app

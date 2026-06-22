@@ -24,4 +24,4 @@ export default fp<FastifyCookieOptions>(async(instance) => {
       domain: 'http://localhost:8080'
     }
   })
-})
+}, {name: 'cookie'})

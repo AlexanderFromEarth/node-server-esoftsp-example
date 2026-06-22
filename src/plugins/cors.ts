@@ -47,4 +47,4 @@ export default fp<FastifyCorsOptions>(async(instance) => {
      */
     maxAge: 3600
   })
-})
+}, {name: 'cors'})

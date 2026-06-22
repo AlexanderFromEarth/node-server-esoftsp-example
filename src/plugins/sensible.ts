@@ -14,4 +14,4 @@ export default fp<FastifySensibleOptions>(async(instance) => {
      */
     sharedSchemaId: 'HttpError'
   })
-})
+}, {name: 'sensible'})

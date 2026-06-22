@@ -22,4 +22,4 @@ export default fp<FastifyCompressOptions>(async(instance) => {
      */
     inflateIfDeflated: true
   })
-})
+}, {name: 'compress'})

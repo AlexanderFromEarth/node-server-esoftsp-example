@@ -60,4 +60,4 @@ export default fp<FastifyHelmetOptions>(async(instance) => {
     permittedCrossDomainPolicies: false,
     xssFilter: false
   })
-})
+}, {name: 'helmet'})

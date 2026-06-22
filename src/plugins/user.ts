@@ -1,9 +1,5 @@
 import fp from 'fastify-plugin'
 
-/**
- * Модифицируем тип реквеста, чтобы TypeScript позволил нам обращаться к полю user.
- * _user не добавляем, так как это условно приватные данные.
- */
 declare module 'fastify' {
   interface FastifyRequest {
     user: {id: number}
@@ -53,7 +49,7 @@ export default fp((instance) => {
       if (req.headers['user-id']) {
         const userId = Number(req.headers['user-id'])
 
-        req.setDecorator<typeof req.user | null>('_user', await instance.usersRepository.get(userId))
+        req.setDecorator<typeof req.user | null>('_user', {id: userId})
       }
     })
-}, {name: 'user', dependencies: ['usersRepository'], decorators: {fastify: ['usersRepository']}})
+}, {name: 'user'})

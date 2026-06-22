@@ -3,17 +3,17 @@ import {PrismaPg} from '@prisma/adapter-pg'
 
 import {PrismaClient} from '../generated/prisma/client.js'
 
-/**
- * Расширяем тип сервера под наши данные.
- */
 declare module 'fastify' {
   interface FastifyInstance {
-    prisma: PrismaClient
+    db: PrismaClient
   }
 }
 
+/**
+ * Добавляет работу с базой данной через ORM Prisma.
+ */
 export default fp(async(instance) => {
-  instance.decorate('prisma', new PrismaClient({
+  instance.decorate('db', new PrismaClient({
     log: [{emit: 'stdout', level: 'query'}],
     adapter: new PrismaPg({connectionString: instance.config.DATABASE_URL})
   }))
